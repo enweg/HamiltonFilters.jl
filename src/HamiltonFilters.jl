@@ -1,6 +1,6 @@
 module HamiltonFilters
 
-# TODO: test and publish
+# TODO: publish
 
 import Base: filter
 using DataFrames

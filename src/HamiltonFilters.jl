@@ -100,7 +100,8 @@ function filter(
     trend = similar(data)
     cycle = similar(data)
 
-    for (i, col) in enumerate(eachcol(data))
+    for i in axes(data, 2)
+        col = data[:, i]
         eltype(col) <: Real || throw(ArgumentError("Column is not Real"))
         trend[:, i], cycle[:, i] = filter(hfilter, col)
     end

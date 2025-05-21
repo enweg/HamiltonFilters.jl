@@ -58,7 +58,7 @@ d-th-order polynomial, choose `p >= d` to obtain a stationary cycle.
 The cyclical component is defined as the regression residuals:
 
 $$
-\hat{\nu}_{t+h} = y_{t+h} - \hat{y}_{t+h}
+\hat\nu_{t+h} = y_{t+h} - \hat y_{t+h}
 $$
 
 The trend is the difference between the observed data and the cycle.

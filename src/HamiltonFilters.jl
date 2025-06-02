@@ -29,7 +29,14 @@ struct HamiltonFilter
     p::Int
 end
 
-function _hamilton_filter(data::Vector{T}, h::Int, p::Int) where {T<:Real}
+function _is_invalid_row(x::AbstractVector)
+    return any(ismissing.(x)) || any(isnan.(x)) || any(isinf.(x))
+end
+function _is_invalid_row(x::Union{Missing,Number})
+    return ismissing(x) || isnan(x) || isinf(x)
+end
+
+function _hamilton_filter(data::Vector{T}, h::Int, p::Int) where {T<:Union{Missing,<:Real}}
     n = length(data)
     rows = p:n
 
@@ -41,6 +48,13 @@ function _hamilton_filter(data::Vector{T}, h::Int, p::Int) where {T<:Real}
 
     rows = p:(n-h)
     y = @view data[rows.+h]
+
+    X_invalid_rows = map(row -> _is_invalid_row(row), eachrow(X_train))
+    y_invalid_rows = _is_invalid_row.(y)
+    invalid_rows = X_invalid_rows .|| y_invalid_rows
+
+    X_train = @view X_train[(!).(invalid_rows), :]
+    y = @view y[(!).(invalid_rows)]
 
     β = X_train \ y
     trend = (X*β)[1:(end-h)]
@@ -75,7 +89,7 @@ the first `(p-1) + h` observations are lost and filled with `NaN`.
 - `(trend::Vector, cycle::Vector)`: A pair of vectors of the same length
   as `data`.
 """
-function apply(hfilter::HamiltonFilter, data::AbstractVector{<:Real})
+function apply(hfilter::HamiltonFilter, data::AbstractVector{T}) where {T<:Union{Missing,<:Real}}
     padding = _hfilter_padding(hfilter.h, hfilter.p, data)
     trend = similar(data)
     trend[1:hfilter.h+hfilter.p-1] .= padding
@@ -106,7 +120,7 @@ filled with `NaN`.
 """
 function apply(
     hfilter::HamiltonFilter,
-    data::Union{Matrix{<:Real},DataFrame}
+    data::Union{AbstractMatrix,DataFrame}
 )
 
     trend = similar(data)
@@ -114,7 +128,7 @@ function apply(
 
     for i in axes(data, 2)
         col = data[:, i]
-        eltype(col) <: Real || throw(ArgumentError("Column is not Real"))
+        eltype(col) <: Union{Missing,<:Real} || throw(ArgumentError("Column is not <:Union{Missing,<:Real}"))
         trend[:, i], cycle[:, i] = apply(hfilter, col)
     end
     return trend, cycle

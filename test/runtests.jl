@@ -13,6 +13,17 @@ using Test
     df = DataFrame(X, :auto)
     trend, cycle = filter(hfilter, df)
 
+    # testing padding
+    x = randn(2)
+    padding = HamiltonFilters._hfilter_padding(8, 4, x)
+    @test all(isnan.(padding))
+    @test length(padding) == 11
+    x = [randn(2)..., missing]
+    padding = HamiltonFilters._hfilter_padding(8, 4, x)
+    @test all(ismissing.(padding))
+    @test length(padding) == 11
+    @test_throws ArgumentError HamiltonFilters._hfilter_padding(2, 2, 1:10)
+
     # Comparison to matlab
     log_gdp = DataFrame(CSV.File("./logGDPC1.csv"))
     matlab_hfilter = DataFrame(CSV.File("./matlab_hfilter.csv"))
@@ -24,5 +35,4 @@ using Test
     @test sum(isnan.(trend.GDPC1)) == 11
     @test isapprox(trend.GDPC1[12:end], matlab_hfilter.Trend[12:end]; atol=1e-6)
     @test isapprox(cycle.GDPC1[12:end], matlab_hfilter.Cycle[12:end]; atol=1e-6)
-
 end

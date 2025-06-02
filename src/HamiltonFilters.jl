@@ -36,19 +36,28 @@ function _hamilton_filter(data::Vector{T}, h::Int, p::Int) where {T<:Real}
 
     X = ones(T, length(rows), p + 1)
     for i in 0:(p-1)
-        X[:, i+2] .= @view data[rows .- i]
+        X[:, i+2] .= @view data[rows.-i]
     end
     X_train = @view X[1:(end-h), :]
 
-    rows = p:(n - h)
-    y = @view data[rows .+ h]
+    rows = p:(n-h)
+    y = @view data[rows.+h]
 
     β = X_train \ y
-    trend = (X * β)[1:(end-h)]
+    trend = (X*β)[1:(end-h)]
     cycle = data[(p+h):end] .- trend
 
     return trend, cycle
 end
+
+_hfilter_padding(h::Int, p::Int, ::Type{T}) where {T<:AbstractFloat} =
+    fill(T(NaN), h + p - 1)
+_hfilter_padding(h::Int, p::Int, ::Type{Union{Missing,T}}) where {T<:Number} =
+    fill(missing, h + p - 1)
+_hfilter_padding(::Int, ::Int, ::Type{T}) where {T<:Any} =
+    throw(ArgumentError("No padding type exists for this input. Try to convert the input to AbstractFloat or Union{Missing,<:Number}"))
+_hfilter_padding(h::Int, p::Int, x::AbstractVector{T}) where {T} =
+    _hfilter_padding(h, p, eltype(x))
 
 """
     filter(hfilter::HamiltonFilter, data::Vector{<:Real})
@@ -93,7 +102,7 @@ filled with `NaN`.
 - `(trend, cycle)`: Two matrices or DataFrames of the same size as `data`.
 """
 function filter(
-    hfilter::HamiltonFilter, 
+    hfilter::HamiltonFilter,
     data::Union{Matrix{<:Real},DataFrame}
 )
 

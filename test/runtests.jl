@@ -7,11 +7,11 @@ using Test
     # implementation tests
     hfilter = HamiltonFilter(8, 4)
     v = randn(1000)
-    trend, cycle = filter(hfilter, v)
+    trend, cycle = apply(hfilter, v)
     X = randn(1000, 10)
-    trend, cycle = filter(hfilter, X)
+    trend, cycle = apply(hfilter, X)
     df = DataFrame(X, :auto)
-    trend, cycle = filter(hfilter, df)
+    trend, cycle = apply(hfilter, df)
 
     # testing padding
     x = randn(2)
@@ -29,7 +29,7 @@ using Test
     matlab_hfilter = DataFrame(CSV.File("./matlab_hfilter.csv"))
 
     hfilter = HamiltonFilter(8, 4)
-    trend, cycle = filter(hfilter, log_gdp)
+    trend, cycle = apply(hfilter, log_gdp)
 
     @test sum(isnan.(trend.GDPC1)) == sum(isnan.(matlab_hfilter.Trend))
     @test sum(isnan.(trend.GDPC1)) == 11

@@ -1,9 +1,8 @@
 module HamiltonFilters
 
-import Base: filter
 using DataFrames
 
-export HamiltonFilter, filter
+export HamiltonFilter, apply
 
 """
     HamiltonFilter(h::Int, p::Int)
@@ -76,9 +75,13 @@ the first `(p-1) + h` observations are lost and filled with `NaN`.
 - `(trend::Vector, cycle::Vector)`: A pair of vectors of the same length
   as `data`.
 """
-function filter(hfilter::HamiltonFilter, data::Vector{T}) where {T<:Real}
-    trend = fill(T(NaN), length(data))
-    cycle = fill(T(NaN), length(data))
+function apply(hfilter::HamiltonFilter, data::AbstractVector{<:Real})
+    padding = _hfilter_padding(hfilter.h, hfilter.p, data)
+    trend = similar(data)
+    trend[1:hfilter.h+hfilter.p-1] .= padding
+    cycle = similar(data)
+    cycle[1:hfilter.h+hfilter.p-1] .= padding
+
     trend_, cycle_ = _hamilton_filter(data, hfilter.h, hfilter.p)
     trend[(hfilter.p+hfilter.h):end] .= trend_
     cycle[(hfilter.p+hfilter.h):end] .= cycle_
@@ -101,7 +104,7 @@ filled with `NaN`.
 # Returns
 - `(trend, cycle)`: Two matrices or DataFrames of the same size as `data`.
 """
-function filter(
+function apply(
     hfilter::HamiltonFilter,
     data::Union{Matrix{<:Real},DataFrame}
 )
@@ -112,7 +115,7 @@ function filter(
     for i in axes(data, 2)
         col = data[:, i]
         eltype(col) <: Real || throw(ArgumentError("Column is not Real"))
-        trend[:, i], cycle[:, i] = filter(hfilter, col)
+        trend[:, i], cycle[:, i] = apply(hfilter, col)
     end
     return trend, cycle
 end

@@ -50,7 +50,8 @@ end
     hfilter = HamiltonFilter(8, 4)
 
     data = Float64.(1:10_000)
-    idx_missing = unique(rand(1:length(data), 100))
+    # idx_missing = unique(rand(1:length(data), 100))
+    idx_missing = 1:100:length(data)
 
     data_nan = copy(data)
     data_nan[idx_missing] .= NaN

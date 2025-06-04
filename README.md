@@ -5,11 +5,6 @@
 </p>
 
 
-> [!NOTE]
-> This package may be merged into a larger project in the future.
-> However, it will remain available as a stand-alone package for users
-> who prefer minimal dependencies. The current API is considered stable.
-
 # HamiltonFilters.jl
 
 `HamiltonFilters.jl` is a lightweight implementation of the Hamilton

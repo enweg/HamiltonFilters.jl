@@ -73,16 +73,31 @@ _hfilter_padding(h::Int, p::Int, x::AbstractVector{T}) where {T} =
     _hfilter_padding(h, p, eltype(x))
 
 """
-    filter(hfilter::HamiltonFilter, data::Vector{<:Real})
+    apply(hfilter::HamiltonFilter, data::Vector{<:Union{Missing,<:Real}})
 
 Applies the Hamilton filter to a univariate time series. Returns a tuple
 containing the estimated trend and cyclical components. Due to filtering,
-the first `(p-1) + h` observations are lost and filled with `NaN`.
+the first `(p-1) + h` observations are lost. Padding depends on the input type. 
+
+- If the input type is `<:Real`, `NaN`s will be used for padding. 
+- If the input type is `Union{Missing, <:Real}`, `missing` will be used for the 
+  padding.
+
+Missing values, ecoded as `missing`, `NaN`, or `Inf`, are handled by limiting the 
+filter regression to only those period for which all data is available. Trend 
+and Cycle components can then be computed for all periods for which all 
+regressors are avaiable. This implies that sometimes a trend exponent can exist 
+even if we cannot obtain the cyclical component, since the cyclical component 
+also requires the observation to be non-missing -- the trend only requires all 
+regressors to be non-missing. 
+
+Missing values are again filled with `NaN`, `missing`, or `Inf`, depending on 
+how they were initially encoded. 
 
 # Arguments
 
 - `hfilter::HamiltonFilter`: A `HamiltonFilter` instance.
-- `data::Vector{<:Real}`: A vector of real-valued observations.
+- `data::Vector{Union{Missing,<:Real}}`: A vector of real-valued observations.
 
 # Returns
 
@@ -103,12 +118,27 @@ function apply(hfilter::HamiltonFilter, data::AbstractVector{T}) where {T<:Union
 end
 
 """
-    filter(hfilter::HamiltonFilter, data::Union{Matrix{<:Real},DataFrame})
+    apply(hfilter::HamiltonFilter, data::Union{AbstractMatrix,DataFrame})
 
 Applies the Hamilton filter column-wise to a multivariate dataset. Returns
 the estimated trend and cyclical components for each column. Due to
-filtering, the first `(p-1) + h` observations in each column are lost and
-filled with `NaN`.
+filtering, the first `(p-1) + h` observations in each column are lost. Padding 
+depends on the type of each column. 
+
+- If the column type is `<:Real`, `NaN`s will be used for padding. 
+- If the column type is `Union{Missing, <:Real}`, `missing` will be used for the 
+  padding.
+
+Missing values, ecoded as `missing`, `NaN`, or `Inf`, are handled by limiting the 
+filter regression to only those period for which all data is available. Trend 
+and Cycle components can then be computed for all periods for which all 
+regressors are avaiable. This implies that sometimes a trend exponent can exist 
+even if we cannot obtain the cyclical component, since the cyclical component 
+also requires the observation to be non-missing -- the trend only requires all 
+regressors to be non-missing. 
+
+Missing values are again filled with `NaN`, `missing`, or `Inf`, depending on 
+how they were initially encoded. 
 
 # Arguments
 - `hfilter::HamiltonFilter`: A `HamiltonFilter` instance.

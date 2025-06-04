@@ -18,7 +18,7 @@ To pin the package to a specific version:
 
 ```julia
 Pkg.add(PackageSpec(url="https://github.com/enweg/HamiltonFilters.jl",
-                    rev="v1.0.0"))
+                    rev="v2.0.0"))
 ```
 
 Once installed, load the package with:
@@ -84,7 +84,7 @@ hfilter = HamiltonFilter(h, p)
 Apply the filter to a time series:
 
 ```julia
-trend, cycle = filter(hfilter, data)
+trend, cycle = apply(hfilter, data)
 ```
 
 The `filter` function always returns a tuple of the form `(trend, cycle)`.
@@ -92,14 +92,21 @@ The `filter` function always returns a tuple of the form `(trend, cycle)`.
 - If `data` is a `Vector{<:Real}`, then `trend` and `cycle` are vectors
   of the same length as `data`. The first `(p-1) + h` values are filled
   with `NaN`.
+- If `data` is a `Vector{Union{Missing,<:Real}}`, then `trend` and `cycle` 
+  are vectors of the same length as `data`. The first `(p-1) + h` values are 
+  filled with `missing`.
 
 - If `data` is a `Matrix{<:Real}`, then `trend` and `cycle` are matrices
   of the same size as `data`. The filter is applied to each column
   independently, and the first `(p-1) + h` rows are filled with `NaN`.
+- If `data` is a `Matrix{Union{Missing,<:Real}}`, then `trend` and `cycle` 
+  are matrices of the same size as `data`. The filter is applied to each column
+  independently, and the first `(p-1) + h` rows are filled with `missing`.
 
 - If `data` is a `DataFrame`, then `trend` and `cycle` are DataFrames of
   the same shape and with the same column names. The filter is applied
-  column-wise, and the first `(p-1) + h` rows are filled with `NaN`.
+  column-wise, and the first `(p-1) + h` rows are either filled with `NaN` or 
+  missing, depending on the type of the column.
 
 ## Has the implementation been tested?
 
@@ -110,3 +117,34 @@ Matlab using real GDP data. The `test` folder contains:
 - `matlab_hfilter.csv`: Matlab output for comparison
 
 The filter output matches the benchmark.
+
+## Are missing values allowed? 
+
+Missing values are handled internally using the following procedure: 
+
+1. We create both the regressor matrix and the outcome vector for the regression 
+   that needs to be estimated. 
+2. We then find all the rows in the regressor matrix that contain `NaN`, `Inf`, 
+   or `missing`. We do the same for the outcome vector. The intersection of the 
+   two are all the observations that we cannot use for the estimation of the 
+   regression. 
+3. The regression is estimated using all those columns that do not contain `NaN`
+   `Inf` or `missing` in either the regressor matrix or the outcome vector. 
+4. The trend is obtained via the fitted values. Thus, the trend can be obtained 
+   for all observations for which none of the regressors is `NaN`, `Inf`, or 
+   `missing`. 
+5. The cycle is obtained as the difference between the observation and the trend. 
+   Thus, computing the cycle requires that both the regressors and the observation 
+   is not `NaN`, `Inf`, or `missing`. 
+6. Depending on the missing type (`NaN`, `Inf`, `missing`), values that cannot 
+   be computed are replaced by `NaN`, `Inf`, `missing`. For this step we rely 
+   on Julia's internal handling of mathematical computations using `NaN`, `Inf`, 
+   and `missing`. 
+
+The precendence of missingness is `missing` > `NaN` > `Inf`. Thus: 
+- If values needed for the computation of trend or cycle only contain one of 
+  `missing`, `NaN`, or `Inf`, then missing values are filled with that value. 
+- If values needed for the computation of trend or cycle contain more than 
+  one of `missing`, `NaN`, or `Inf`, then missing values are filled using the 
+  highest precedence value. E.g. `missing` is used if both `missing` and `NaN` 
+  are present. 

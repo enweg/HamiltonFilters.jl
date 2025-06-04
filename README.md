@@ -1,3 +1,6 @@
+![Logo](./assets/logo.png)
+
+
 > [!NOTE]
 > This package may be merged into a larger project in the future.
 > However, it will remain available as a stand-alone package for users

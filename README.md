@@ -1,4 +1,8 @@
-![Logo](./assets/logo.png)
+<p align="center">
+  <img src="assets/logo.png"
+       alt="Logo of HamiltonFilters.jl"
+       width="450">
+</p>
 
 
 > [!NOTE]
